@@ -1,15 +1,24 @@
 package main.userDao;
 
-import java.sql.SQLException;
+import main.exceptions.DbException;
+import main.exceptions.NotUniqueEmailException;
+import main.exceptions.NotUniqueNameException;
 import main.models.User;
 import java.util.List;
 
 public interface UserDao {
-    List<User> getAllUsers() throws SQLException;
-    User getUserById(int id) throws SQLException;
-    User getYoungestUser() throws SQLException;
+    List<User> getAllUsers() throws DbException;
+    User getUserById(int id) throws DbException;
 
-    User updateUserById(int id, User newUser) throws SQLException;
+    // return true if user is inserted
+    boolean insertUser(String name, String email)
+            throws DbException, NotUniqueNameException, NotUniqueEmailException;
 
-    boolean deleteUserById(int id) throws SQLException;
+    // returns old user
+    boolean updateUserById(User newUser) throws DbException;
+
+    // returns true if user is deleted
+    boolean deleteUserById(int id) throws DbException;
+
+    void close();
 }

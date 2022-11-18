@@ -1,12 +1,13 @@
 package main.connectionFactory.impl;
 
+import main.connectionFactory.AbstractConnectionFactory;
 import main.connectionFactory.ConnectionFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class RawConnectionFactory implements ConnectionFactory {
+public class RawConnectionFactory extends AbstractConnectionFactory {
 
     private Connection connection = null;
 
@@ -15,7 +16,7 @@ public class RawConnectionFactory implements ConnectionFactory {
             throws SQLException {
 
         if (connection != null)
-            close();
+            close(connection);
 
         connection = DriverManager.getConnection(url, login, password);
         connection.setAutoCommit(false);
@@ -25,8 +26,6 @@ public class RawConnectionFactory implements ConnectionFactory {
 
     @Override
     public void close() {
-        try {
-            connection.close();
-        } catch (Exception ignored) {}
+        close(connection);
     }
 }

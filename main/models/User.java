@@ -1,24 +1,22 @@
 package main.models;
 
-import java.util.Date;
-
 public class User {
     private final int id;
     private String name;
-    private Date birthDate;
+    private String email;
 
-    public User(int id, String name, Date birthDate) {
+    public User(int id, String name, String email) {
         this.id = id;
         this.name = name;
-        this.birthDate = birthDate;
+        this.email = email;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public void setBirthDate(Date birthDate) {
-        this.birthDate = birthDate;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public int getId() {
@@ -29,8 +27,8 @@ public class User {
         return name;
     }
 
-    public Date getBirthDate() {
-        return birthDate;
+    public String getEmail() {
+        return email;
     }
 
     @Override
@@ -38,7 +36,7 @@ public class User {
         return "main.models.User{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", birthDate=" + birthDate +
+                ", birthDate=" + email +
                 '}';
     }
 }

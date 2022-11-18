@@ -1,55 +1,79 @@
 package main.userDao.impl;
 
+import main.exceptions.DbException;
+import main.exceptions.NotUniqueEmailException;
+import main.exceptions.NotUniqueNameException;
 import main.models.User;
 import main.userDao.AbstractUserDao;
-import main.userDao.UserDao;
 
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.Date;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PostgresUserDao extends AbstractUserDao {
     private static final String url = "jdbc:postgresql://localhost:5432/";
 
     private static final String GET_ALL_USERS =
-            "SELECT * FROM \"user\"";
+            "SELECT * FROM \"users\"";
     private static final String GET_USER_BY_ID =
-            "SELECT * FROM \"user\" WHERE id = ?";
-    private static final String GET_YOUNGEST_USER =
-            "SELECT * FROM \"user\" WHERE birthdate = (SELECT MAX(birthdate) FROM \"user\")";
+            "SELECT * FROM \"users\" WHERE id = ?";
+    private static final String INSERT_USER =
+            "INSERT INTO \"users\" (name, email) VALUES (?, ?)";
     private static final String UPDATE_USER_BY_ID =
-            "UPDATE \"user\" SET name = ?, birthdate = ? WHERE id = ?";
+            "UPDATE \"users\" SET name = ?, birthdate = ? WHERE id = ?";
     private static final String DELETE_USER_BY_ID =
-            "DELETE FROM \"user\" WHERE id = ?";
+            "DELETE FROM \"users\" WHERE id = ?";
 
 
-    public PostgresUserDao(String login, String password) throws SQLException {
+    public PostgresUserDao(String login, String password) {
         super(url, login, password);
     }
 
     @Override
-    public List<User> getAllUsers() throws SQLException {
+    public List<User> getAllUsers() throws DbException {
         return getAllUsers(GET_ALL_USERS);
     }
 
     @Override
-    public User getUserById(int id) throws SQLException {
+    public User getUserById(int id) throws DbException {
         return getUserById(id, GET_USER_BY_ID);
     }
 
     @Override
-    public User getYoungestUser() throws SQLException {
-        return getYoungestUser(GET_YOUNGEST_USER);
+    public boolean insertUser(String name, String email)
+            throws DbException, NotUniqueNameException, NotUniqueEmailException {
+
+        try {
+            return insertUser(name, email, INSERT_USER);
+        }
+        catch (DbException e) {
+            throw e;
+        }
+        catch (SQLException e) {
+            String message = e.getMessage();
+
+            Pattern pattern = Pattern.compile("\\((\\w+)\\)=\\(.+\\)");
+            Matcher matcher = pattern.matcher(message);
+
+            matcher.find();
+
+            String field = matcher.group(1);
+
+            if (field.equals("name"))
+                throw new NotUniqueNameException("Name = " + name + " is not unique");
+            else
+                throw new NotUniqueEmailException("Email = " + email + " is not unique");
+        }
     }
 
     @Override
-    public User updateUserById(int id, User newUser) throws SQLException {
-        return updateUserById(id, newUser, UPDATE_USER_BY_ID);
+    public boolean updateUserById(User newUser) throws DbException {
+        return updateUserById(newUser, UPDATE_USER_BY_ID);
     }
 
     @Override
-    public boolean deleteUserById(int id) throws SQLException {
+    public boolean deleteUserById(int id) throws DbException {
         return deleteUserById(id, DELETE_USER_BY_ID);
     }
 }

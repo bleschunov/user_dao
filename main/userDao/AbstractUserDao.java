@@ -2,7 +2,11 @@ package main.userDao;
 
 import main.connectionFactory.ConnectionFactory;
 import main.connectionFactory.ConnectionFactoryFactory;
+import main.exceptions.DbException;
+import main.exceptions.NotUniqueEmailException;
+import main.helpers.Utils;
 import main.models.User;
+import org.postgresql.util.PSQLException;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -17,8 +21,12 @@ public abstract class AbstractUserDao implements UserDao {
     private final ConnectionFactory connectionFactory =
             ConnectionFactoryFactory.getConnectionFactory();
 
-    protected Connection getConnection() throws SQLException {
-        return connectionFactory.getConnection(url, login, password);
+    protected Connection getConnection() throws DbException {
+        try {
+            return connectionFactory.getConnection(url, login, password);
+        } catch (SQLException e) {
+            throw new DbException("Cannot connect", e);
+        }
     }
 
     protected AbstractUserDao(String url, String login, String password) {
@@ -27,33 +35,30 @@ public abstract class AbstractUserDao implements UserDao {
         this.password = password;
     }
 
-    protected List<User> getAllUsers(String query) throws SQLException {
+    protected List<User> getAllUsers(String query) throws DbException {
         Connection connection = getConnection();
-
         List<User> result = new ArrayList<>();
 
-        try (Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(query)) {
+        try (   Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery(query)) {
 
-            try {
-                while (resultSet.next()) {
-                    int id = resultSet.getInt("id");
-                    String name = resultSet.getString("name");
-                    Date birthDate = resultSet.getDate("birthDate");
+            while (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String name = resultSet.getString("name");
+                String email = resultSet.getString("email");
 
-                    result.add(new User(id, name, birthDate));
-                }
-
-                connection.commit();
-                return result;
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
+                result.add(new User(id, name, email));
             }
+
+            connection.commit();
+            return result;
+        } catch (SQLException e) {
+            Utils.rollbackQuietly(connection);
+            throw new DbException(e);
         }
     }
 
-    public User getUserById(int id, String query) throws SQLException {
+    public User getUserById(int id, String query) throws DbException {
         Connection connection = getConnection();
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
@@ -63,90 +68,79 @@ public abstract class AbstractUserDao implements UserDao {
             try (ResultSet resultSet = statement.executeQuery()) {
 
                 if (!resultSet.next())
-                    return new User(-1, "", new Date());
+                    return new User(-1, "", "");
 
                 int userId = resultSet.getInt("id");
                 String name = resultSet.getString("name");
-                Date birthDate = resultSet.getDate("birthDate");
+                String email = resultSet.getString("email");
 
                 connection.commit();
-                return new User(userId, name, birthDate);
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
+                return new User(userId, name, email);
             }
+        } catch (SQLException e) {
+            Utils.rollbackQuietly(connection);
+            throw new DbException(e);
         }
     }
 
-    public User getYoungestUser(String query) throws SQLException {
+    public boolean insertUser(String name, String email, String query) throws SQLException {
         Connection connection = getConnection();
-
-        try (   Statement statement = connection.createStatement();
-                ResultSet resultSet = statement.executeQuery(query)) {
-
-            try {
-                if (!resultSet.next())
-                    return new User(-1, "", new Date());
-
-                int userId = resultSet.getInt("id");
-                String name = resultSet.getString("name");
-                Date birthDate = resultSet.getDate("birthDate");
-
-                connection.commit();
-                return new User(userId, name, birthDate);
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
-            }
-        }
-    }
-
-    public User updateUserById(int id, User newUser, String query) throws SQLException {
-        Connection connection = getConnection();
-
-        User oldUser = getUserById(id);
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            try {
-                preparedStatement.setString(1, newUser.getName());
-                preparedStatement.setDate(2, new java.sql.Date(newUser.getBirthDate().getTime()));
-                preparedStatement.setInt(3, newUser.getId());
-                preparedStatement.executeUpdate();
 
-                connection.commit();
-                return oldUser;
-            } catch (SQLException e) {
-                connection.rollback();
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, email);
+            preparedStatement.executeUpdate();
+
+            connection.commit();
+            return true;
+        }
+        catch (SQLException e) {
+            Utils.rollbackQuietly(connection);
+
+            if (    e instanceof PSQLException ||
+                    e instanceof SQLIntegrityConstraintViolationException)
                 throw e;
-            }
+
+            throw new DbException(e);
         }
     }
 
-    public boolean deleteUserById(int id, String query) throws SQLException {
+    public boolean updateUserById(User newUser, String query) throws DbException {
         Connection connection = getConnection();
 
-        int oldCount = getAllUsers().size();
-
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            try {
-                preparedStatement.setInt(1, id);
 
-                preparedStatement.executeUpdate();
+            preparedStatement.setString(1, newUser.getName());
+            preparedStatement.setString(2, newUser.getEmail());
+            preparedStatement.setInt(3, newUser.getId());
+            int updatedCount = preparedStatement.executeUpdate();
 
-                int newCount = getAllUsers().size();
-                if (newCount == oldCount)
-                    return false;
-
-                connection.commit();
-                return true;
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
-            }
+            connection.commit();
+            return updatedCount == 1;
+        } catch (SQLException e) {
+            Utils.rollbackQuietly(connection);
+            throw new DbException(e);
         }
     }
 
-    protected void close() {
+    public boolean deleteUserById(int id, String query) throws DbException {
+        Connection connection = getConnection();
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            preparedStatement.setInt(1, id);
+            int deletedCount = preparedStatement.executeUpdate();
+
+            connection.commit();
+            return deletedCount == 1;
+        } catch (SQLException e) {
+            Utils.rollbackQuietly(connection);
+            throw new DbException(e);
+        }
+    }
+
+    public void close() {
         connectionFactory.close();
     }
 }

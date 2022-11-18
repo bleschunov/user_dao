@@ -1,12 +1,13 @@
 package main.connectionFactory.impl;
 
+import main.connectionFactory.AbstractConnectionFactory;
 import main.connectionFactory.ConnectionFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class CachedConnectionFactory implements ConnectionFactory {
+public class CachedConnectionFactory extends AbstractConnectionFactory {
     private Connection connection = null;
 
     @Override
@@ -24,8 +25,6 @@ public class CachedConnectionFactory implements ConnectionFactory {
 
     @Override
     public void close() {
-        try {
-            connection.close();
-        } catch (Exception ignored) {}
+        close(connection);
     }
 }

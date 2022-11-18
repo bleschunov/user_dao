@@ -1,5 +1,6 @@
 package main.tests;
 
+import main.exceptions.DbException;
 import main.userDao.UserDao;
 
 import java.sql.SQLException;
@@ -22,7 +23,7 @@ public class Speed {
 
                 results.add(currentResult);
             }
-        } catch (SQLException e) {
+        } catch (DbException e) {
             e.printStackTrace();
         }
 
