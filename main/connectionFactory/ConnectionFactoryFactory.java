@@ -2,6 +2,7 @@ package main.connectionFactory;
 
 import main.connectionFactory.impl.CachedConnectionFactory;
 import main.connectionFactory.impl.RawConnectionFactory;
+import main.models.DbName;
 
 public class ConnectionFactoryFactory {
     public enum FactoryType { RAW, CACHED }

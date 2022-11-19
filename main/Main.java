@@ -1,35 +1,59 @@
 package main;
 
 import main.connectionFactory.ConnectionFactoryFactory;
-import main.exceptions.DbException;
-import main.tests.Speed;
-import main.userDao.UserDao;
-import main.userDao.decorator.UserDaoWithLogger;
-import main.userDao.impl.MySqlUserDao;
-import main.userDao.impl.PostgresUserDao;
+import main.dao.questionDao.QuestionDao;
+import main.dao.questionDao.QuestionDaoJdbc;
+import main.dao.quizDao.QuizDao;
+import main.dao.quizDao.QuizDaoJdbc;
+import main.dao.userDao.UserDao;
+import main.dao.userDao.UserDaoJdbc;
+import main.exceptions.DaoException;
+import main.helpers.PropertiesReader;
+import main.models.DbName;
+import main.models.Question;
+import main.models.Quiz;
+import main.models.User;
+import main.transactionManager.TransactionManager;
+
+import java.util.List;
+import java.util.concurrent.Callable;
 
 public class Main {
-    private static final String mySqlLogin = "root";
-    private static final String mySqlPassword = "qwerty12345";
 
-    private static final String postgresLogin = "postgres";
-    private static final String postgresPassword = "qwerty12345";
 
     public static void main(String[] args) {
 
+//        ConnectionFactoryFactory.setFactoryType(ConnectionFactoryFactory.FactoryType.RAW);
+//        PropertiesReader.setDbName(DbName.MYSQL);
+
+        TransactionManager<List<Question>> transactionManager = new TransactionManager<>();
+//        QuizDao quizDao = new QuizDaoJdbc();
+//        UserDao userDao = new UserDaoJdbc();
+        QuestionDao questionDao = new QuestionDaoJdbc();
+
         try {
-            ConnectionFactoryFactory.setFactoryType(ConnectionFactoryFactory.FactoryType.CACHED);
 
-//            UserDao userDao = new UserDaoWithLogger(new PostgresUserDao(postgresLogin, postgresPassword));
-            UserDao userDao = new UserDaoWithLogger(new MySqlUserDao(mySqlLogin, mySqlPassword));
+//            List<Quiz> quizList = transactionManager.doInTransaction(() -> quizDao.selectAll());
+//            List<User> users = transactionManager.doInTransaction(() -> userDao.selectAll());
+            List<Question> questions = transactionManager.doInTransaction(() -> questionDao.selectAll());
 
-//            userDao.getAllUsers();
+//            for (Quiz quiz : quizList) {
+//                System.out.println(quiz);
+//                System.out.println();
+//            }
 
-            userDao.insertUser("ataturk", "putin@gmail.com");
+//            for (User user : users) {
+//                System.out.println(user);
+//                System.out.println();
+//            }
 
-            userDao.close();
+            for (Question question : questions) {
+                System.out.println(question);
+                System.out.println();
+            }
 
-        } catch (DbException e) {
+
+        } catch (DaoException e) {
             e.printStackTrace();
         }
 

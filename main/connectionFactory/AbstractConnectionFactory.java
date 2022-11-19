@@ -1,12 +1,18 @@
 package main.connectionFactory;
 
-import main.helpers.Utils;
+import main.helpers.PropertiesReader;
 
-import java.sql.Connection;
+import java.util.Properties;
 
 public abstract class AbstractConnectionFactory implements ConnectionFactory {
+    protected final String url;
+    protected final String login;
+    protected final String password;
 
-    protected void close(Connection connection) {
-        Utils.closeQuietly(connection);
+    protected AbstractConnectionFactory() {
+        Properties props = PropertiesReader.readCredentials();
+        url = props.getProperty("url");
+        login = props.getProperty("login");
+        password = props.getProperty("password");
     }
 }

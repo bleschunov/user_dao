@@ -1,6 +1,6 @@
 package main.exceptions;
 
-public class NotUniqueEmailException extends DbException {
+public class NotUniqueEmailException extends DaoException {
 
     public NotUniqueEmailException(String reason) {
         super(reason);

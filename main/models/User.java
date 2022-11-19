@@ -33,7 +33,7 @@ public class User {
 
     @Override
     public String toString() {
-        return "main.models.User{" +
+        return "User{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", birthDate=" + email +

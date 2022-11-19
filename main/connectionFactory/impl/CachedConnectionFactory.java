@@ -1,7 +1,9 @@
 package main.connectionFactory.impl;
 
 import main.connectionFactory.AbstractConnectionFactory;
-import main.connectionFactory.ConnectionFactory;
+import main.connectionFactory.ConnectionFactoryFactory;
+import main.exceptions.DbException;
+import main.models.DbName;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -11,20 +13,19 @@ public class CachedConnectionFactory extends AbstractConnectionFactory {
     private Connection connection = null;
 
     @Override
-    public Connection getConnection(String url, String login, String password)
-            throws SQLException {
+    public Connection getConnection()
+            throws DbException {
 
         if (connection != null)
             return connection;
 
-        connection = DriverManager.getConnection(url, login, password);
-        connection.setAutoCommit(false);
+        try {
+            connection = DriverManager.getConnection(url, login, password);
+            connection.setAutoCommit(false);
+        } catch (SQLException e) {
+            throw new DbException(e);
+        }
 
         return connection;
-    }
-
-    @Override
-    public void close() {
-        close(connection);
     }
 }

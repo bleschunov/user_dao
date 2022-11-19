@@ -1,6 +1,6 @@
 package main.exceptions;
 
-public class NotUniqueNameException extends DbException {
+public class NotUniqueNameException extends DaoException {
 
     public NotUniqueNameException(String reason) {
         super(reason);

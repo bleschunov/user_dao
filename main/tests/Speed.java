@@ -1,9 +1,8 @@
 package main.tests;
 
 import main.exceptions.DbException;
-import main.userDao.UserDao;
+import main.dao.userDao.UserDao;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +15,7 @@ public class Speed {
             for (int i = 0; i < 1000; i++) {
 
                 long start = System.nanoTime();
-                userDao.getAllUsers();
+                userDao.selectAll();
                 long end = System.nanoTime();
 
                 int currentResult = (int) ((end - start) / 1000);
